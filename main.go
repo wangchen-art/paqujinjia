@@ -270,6 +270,14 @@ func round1(v float64) float64 {
 	return float64(int(v*10)) / 10
 }
 
+// round2 四舍五入到 2 位小数，正确处理正负数
+func round2(v float64) float64 {
+	if v >= 0 {
+		return float64(int(v*100+0.5)) / 100
+	}
+	return float64(int(v*100-0.5)) / 100
+}
+
 // ====== 主流程 ======
 
 func main() {
@@ -395,12 +403,12 @@ func main() {
 			saved, hasSaved := calib.Offsets[m.Name]
 
 			if !hasSaved {
-				calib.Offsets[m.Name] = MetalOffset{BPOffset: round1(bpOff), SPOffset: round1(spOff)}
-				fmt.Printf("    → 初次设定 offset: bp=%+.1f  sp=%+.1f\n", round1(bpOff), round1(spOff))
+				calib.Offsets[m.Name] = MetalOffset{BPOffset: round2(bpOff), SPOffset: round2(spOff)}
+				fmt.Printf("    → 初次设定 offset: bp=%+.2f  sp=%+.2f\n", round2(bpOff), round2(spOff))
 				needUpdate = true
 			} else {
 				trend := analyzeTrend(m.Name, saved, calib.History)
-				fmt.Printf("    保存值: bp=%+.1f  sp=%+.1f\n", saved.BPOffset, saved.SPOffset)
+				fmt.Printf("    保存值: bp=%+.2f  sp=%+.2f\n", saved.BPOffset, saved.SPOffset)
 				fmt.Printf("    趋势:   ")
 				for i, off := range trend.RecentBP {
 					if i >= 5 {
@@ -412,9 +420,9 @@ func main() {
 				fmt.Printf("(bp)\n")
 
 				if trend.Deviated {
-					fmt.Printf("    ⚠ 检测到商家调价! 连续%d分钟偏离，更新为 bp=%+.1f sp=%+.1f\n",
-						trend.Consecutive, round1(bpOff), round1(spOff))
-					calib.Offsets[m.Name] = MetalOffset{BPOffset: round1(bpOff), SPOffset: round1(spOff)}
+					fmt.Printf("    ⚠ 检测到商家调价! 连续%d分钟偏离，更新为 bp=%+.2f sp=%+.2f\n",
+						trend.Consecutive, round2(bpOff), round2(spOff))
+					calib.Offsets[m.Name] = MetalOffset{BPOffset: round2(bpOff), SPOffset: round2(spOff)}
 					needUpdate = true
 				} else if trend.Consecutive >= 1 {
 					fmt.Printf("    ~ 轻微偏离(第%d分钟)，未达阈值(%d分钟)，暂不更新\n",
@@ -584,10 +592,10 @@ func runJSON() {
 		}
 		output.Prices[m.Name] = PriceEntry{
 			ZtBP: zt.BP, ZtSP: zt.SP,
-			RefBP: round1(zt.BP - off.BPOffset),
-			RefSP: round1(zt.SP - off.SPOffset),
-			BPOffset: round1(off.BPOffset),
-			SPOffset: round1(off.SPOffset),
+			RefBP: round2(zt.BP - off.BPOffset),
+			RefSP: round2(zt.SP - off.SPOffset),
+			BPOffset: round2(off.BPOffset),
+			SPOffset: round2(off.SPOffset),
 		}
 	}
 
